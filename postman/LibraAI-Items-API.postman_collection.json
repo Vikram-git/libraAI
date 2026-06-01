@@ -1,0 +1,153 @@
+{
+  "info": {
+    "name": "LibraAI Items REST API",
+    "description": "MVP CRUD endpoints for Items — test all operations with proper HTTP status codes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000" },
+    { "key": "itemId", "value": "" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth (Extension)",
+      "item": [
+        {
+          "name": "Login - Get JWT Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  pm.collectionVariables.set('token', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@libraai.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Items CRUD",
+      "item": [
+        {
+          "name": "GET All Items",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/items?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["items"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "category", "value": "electronics", "disabled": true },
+                { "key": "q", "value": "mouse", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Items - Filter & Pagination",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/items?category=electronics&sortBy=price&sortOrder=asc&page=1&limit=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["items"],
+              "query": [
+                { "key": "category", "value": "electronics" },
+                { "key": "sortBy", "value": "price" },
+                { "key": "sortOrder", "value": "asc" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "5" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Create Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.collectionVariables.set('itemId', pm.response.json().id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Item from Postman\",\n  \"description\": \"Created via POST /items\",\n  \"price\": 19.99,\n  \"quantity\": 5,\n  \"category\": \"electronics\"\n}"
+            },
+            "url": "{{baseUrl}}/items"
+          }
+        },
+        {
+          "name": "GET Item By ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/items/{{itemId}}"
+          }
+        },
+        {
+          "name": "GET Item - Not Found (404)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/items/invalid-id-12345"
+          }
+        },
+        {
+          "name": "PUT Update Item",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Item Name\",\n  \"price\": 24.99,\n  \"quantity\": 10\n}"
+            },
+            "url": "{{baseUrl}}/items/{{itemId}}"
+          }
+        },
+        {
+          "name": "POST Create Item - Validation Error (400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"\",\n  \"price\": -5\n}"
+            },
+            "url": "{{baseUrl}}/items"
+          }
+        },
+        {
+          "name": "DELETE Item",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/items/{{itemId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

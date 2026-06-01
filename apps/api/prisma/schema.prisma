@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  LIBRARIAN
+  ADMIN
+}
+
+enum BorrowStatus {
+  ACTIVE
+  RETURNED
+  OVERDUE
+}
+
+enum NotificationType {
+  DUE_DATE
+  RESERVATION
+  FINE
+  NEW_ARRIVAL
+  GENERAL
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  role          Role           @default(MEMBER)
+  avatarUrl     String?
+  readingGoal   Int            @default(0)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  borrows       Borrow[]
+  reservations  Reservation[]
+  wishlists     Wishlist[]
+  readingLists  ReadingList[]
+  notifications Notification[]
+  fines         Fine[]
+  items         Item[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  books     Book[]
+}
+
+model Book {
+  id            String    @id @default(cuid())
+  title         String
+  author        String
+  isbn          String?   @unique
+  description   String?
+  coverUrl      String?
+  priceInr      Float     @default(399)
+  publishedYear Int?
+  totalCopies   Int       @default(1)
+  available     Int       @default(1)
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  embedding     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  borrows       Borrow[]
+  reservations  Reservation[]
+  wishlists     WishlistItem[]
+  readingListItems ReadingListItem[]
+
+  @@index([title])
+  @@index([author])
+}
+
+model Borrow {
+  id         String       @id @default(cuid())
+  userId     String
+  bookId     String
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book       Book         @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  borrowedAt DateTime     @default(now())
+  dueDate    DateTime
+  returnedAt DateTime?
+  status     BorrowStatus @default(ACTIVE)
+  fine       Fine?
+
+  @@index([userId, status])
+  @@index([bookId])
+}
+
+model Reservation {
+  id        String   @id @default(cuid())
+  userId    String
+  bookId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  fulfilled Boolean  @default(false)
+
+  @@unique([userId, bookId])
+}
+
+model Wishlist {
+  id        String         @id @default(cuid())
+  userId    String
+  name      String         @default("My Wishlist")
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  bookId     String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  book       Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  addedAt    DateTime @default(now())
+
+  @@unique([wishlistId, bookId])
+}
+
+model ReadingList {
+  id        String            @id @default(cuid())
+  userId    String
+  name      String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     ReadingListItem[]
+  createdAt DateTime          @default(now())
+
+  @@index([userId])
+}
+
+model ReadingListItem {
+  id            String      @id @default(cuid())
+  readingListId String
+  bookId        String
+  completed     Boolean     @default(false)
+  readingList   ReadingList @relation(fields: [readingListId], references: [id], onDelete: Cascade)
+  book          Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  addedAt       DateTime    @default(now())
+
+  @@unique([readingListId, bookId])
+}
+
+model Fine {
+  id        String    @id @default(cuid())
+  userId    String
+  borrowId  String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  borrow    Borrow    @relation(fields: [borrowId], references: [id], onDelete: Cascade)
+  amount    Float
+  paid      Boolean   @default(false)
+  paidAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, paid])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  @@index([userId, read])
+}
+
+/// REST CRUD Items API (MVP assignment + extensions)
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float    @default(0)
+  quantity    Int      @default(0)
+  category    String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([name])
+  @@index([category])
+  @@index([userId])
+}

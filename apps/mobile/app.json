@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "LibraAI",
+    "slug": "libraai",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "libraai",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.libraai.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#6366f1"
+      },
+      "package": "com.libraai.app"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow LibraAI to scan book barcodes"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6366f1"
+        }
+      ]
+    ]
+  }
+}
