@@ -1,11 +1,12 @@
 import { Router } from "express";
+import { param } from "../lib/params.js";
 
 const router = Router();
 
 /** Open Library ISBN lookup for barcode scanner auto-fill */
 router.get("/:isbn", async (req, res, next) => {
   try {
-    const isbn = req.params.isbn.replace(/-/g, "");
+    const isbn = param(req, "isbn").replace(/-/g, "");
     const response = await fetch(
       `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
     );

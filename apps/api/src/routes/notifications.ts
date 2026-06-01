@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { authenticate, type AuthRequest } from "../lib/auth.js";
+import { param } from "../lib/params.js";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.get("/", async (req: AuthRequest, res, next) => {
 router.patch("/:id/read", async (req: AuthRequest, res, next) => {
   try {
     const notification = await prisma.notification.updateMany({
-      where: { id: req.params.id, userId: req.user!.userId },
+      where: { id: param(req, "id"), userId: req.user!.userId },
       data: { read: true },
     });
     res.json({ updated: notification.count });

@@ -8,6 +8,7 @@ import {
   updateItemSchema,
   listItemsQuerySchema,
 } from "../validators/item.js";
+import { param } from "../lib/params.js";
 
 const router = Router();
 const REQUIRE_AUTH = process.env.ITEMS_REQUIRE_AUTH === "true";
@@ -105,7 +106,8 @@ router.post(
 /** GET /items/:id */
 router.get("/:id", async (req, res, next) => {
   try {
-    const item = await prisma.item.findUnique({ where: { id: req.params.id } });
+    const id = param(req, "id");
+    const item = await prisma.item.findUnique({ where: { id } });
     if (!item) throw new AppError(404, "Item not found");
     res.status(200).json(item);
   } catch (e) {
@@ -120,11 +122,12 @@ router.put(
   validateBody(updateItemSchema),
   async (req, res, next) => {
     try {
-      const existing = await prisma.item.findUnique({ where: { id: req.params.id } });
+      const id = param(req, "id");
+      const existing = await prisma.item.findUnique({ where: { id } });
       if (!existing) throw new AppError(404, "Item not found");
 
       const item = await prisma.item.update({
-        where: { id: req.params.id },
+        where: { id },
         data: req.body,
       });
       res.status(200).json(item);
@@ -137,11 +140,12 @@ router.put(
 /** DELETE /items/:id */
 router.delete("/:id", requireAuth, async (req, res, next) => {
   try {
-    const existing = await prisma.item.findUnique({ where: { id: req.params.id } });
+    const id = param(req, "id");
+    const existing = await prisma.item.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, "Item not found");
 
-    await prisma.item.delete({ where: { id: req.params.id } });
-    res.status(200).json({ message: "Item deleted successfully", id: req.params.id });
+    await prisma.item.delete({ where: { id } });
+    res.status(200).json({ message: "Item deleted successfully", id });
   } catch (e) {
     next(e);
   }

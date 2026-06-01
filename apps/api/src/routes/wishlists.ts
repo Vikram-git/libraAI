@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { AppError } from "../lib/errors.js";
 import { authenticate, type AuthRequest } from "../lib/auth.js";
+import { param } from "../lib/params.js";
 
 const router = Router();
 
@@ -36,7 +37,7 @@ router.post("/:id/items", async (req: AuthRequest, res, next) => {
   try {
     const { bookId } = z.object({ bookId: z.string() }).parse(req.body);
     const wishlist = await prisma.wishlist.findFirst({
-      where: { id: req.params.id, userId: req.user!.userId },
+      where: { id: param(req, "id"), userId: req.user!.userId },
     });
     if (!wishlist) throw new AppError(404, "Wishlist not found");
 
@@ -53,11 +54,11 @@ router.post("/:id/items", async (req: AuthRequest, res, next) => {
 router.delete("/:wishlistId/items/:itemId", async (req: AuthRequest, res, next) => {
   try {
     const wishlist = await prisma.wishlist.findFirst({
-      where: { id: req.params.wishlistId, userId: req.user!.userId },
+      where: { id: param(req, "wishlistId"), userId: req.user!.userId },
     });
     if (!wishlist) throw new AppError(404, "Wishlist not found");
 
-    await prisma.wishlistItem.delete({ where: { id: req.params.itemId } });
+    await prisma.wishlistItem.delete({ where: { id: param(req, "itemId") } });
     res.json({ success: true });
   } catch (e) {
     next(e);

@@ -6,7 +6,14 @@ import type { Book } from "@prisma/client";
 const SYSTEM_PROMPT = `You are LibraAI, a friendly and knowledgeable library assistant for an Indian and international book catalog.
 Answer concisely. Recommend specific books from the catalog when relevant. Mention availability when known.`;
 
-type BookResult = Awaited<ReturnType<typeof keywordSearch>>[number];
+interface BookResult {
+  id: string;
+  title: string;
+  author: string;
+  description?: string | null;
+  coverUrl?: string | null;
+  available: number;
+}
 
 function smartFallbackReply(
   message: string,
@@ -102,9 +109,25 @@ export async function librarianChat(userId: string | null, message: string) {
 
   let books: BookResult[] = [];
   try {
-    books = await semanticSearch(message, 8);
+    const semantic = await semanticSearch(message, 8);
+    books = semantic.map((b) => ({
+      id: b.id,
+      title: b.title,
+      author: b.author,
+      description: b.description,
+      coverUrl: b.coverUrl,
+      available: b.available,
+    }));
   } catch {
-    books = await keywordSearch(message, 8);
+    const keyword = await keywordSearch(message, 8);
+    books = keyword.map((b) => ({
+      id: b.id,
+      title: b.title,
+      author: b.author,
+      description: b.description,
+      coverUrl: b.coverUrl,
+      available: b.available,
+    }));
   }
 
   let context = "";

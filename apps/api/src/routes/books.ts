@@ -6,6 +6,7 @@ import { authenticate, requireRole, type AuthRequest } from "../lib/auth.js";
 import { semanticSearch, keywordSearch } from "../services/ai-search.js";
 import { getAlsoBorrowed } from "../services/recommendations.js";
 import { createEmbedding, bookEmbeddingText } from "../services/openai.js";
+import { param } from "../lib/params.js";
 
 const router = Router();
 
@@ -91,7 +92,7 @@ router.get("/search/semantic", async (req, res, next) => {
 router.get("/isbn/:isbn", async (req, res, next) => {
   try {
     const book = await prisma.book.findUnique({
-      where: { isbn: req.params.isbn },
+      where: { isbn: param(req, "isbn") },
       include: { category: true },
     });
     if (!book) throw new AppError(404, "Book not found");
@@ -103,8 +104,9 @@ router.get("/isbn/:isbn", async (req, res, next) => {
 
 router.get("/:id", async (req, res, next) => {
   try {
+    const id = param(req, "id");
     const book = await prisma.book.findUnique({
-      where: { id: req.params.id },
+      where: { id },
       include: { category: true },
     });
     if (!book) throw new AppError(404, "Book not found");
@@ -116,7 +118,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/:id/also-borrowed", async (req, res, next) => {
   try {
-    const related = await getAlsoBorrowed(req.params.id);
+    const related = await getAlsoBorrowed(param(req, "id"));
     res.json(related);
   } catch (e) {
     next(e);
@@ -164,8 +166,9 @@ router.post("/", authenticate, requireRole("LIBRARIAN", "ADMIN"), async (req, re
 
 router.patch("/:id", authenticate, requireRole("LIBRARIAN", "ADMIN"), async (req, res, next) => {
   try {
+    const id = param(req, "id");
     const data = bookSchema.partial().parse(req.body);
-    const existing = await prisma.book.findUnique({ where: { id: req.params.id } });
+    const existing = await prisma.book.findUnique({ where: { id } });
     if (!existing) throw new AppError(404, "Book not found");
 
     let available = existing.available;
@@ -175,7 +178,7 @@ router.patch("/:id", authenticate, requireRole("LIBRARIAN", "ADMIN"), async (req
     }
 
     const book = await prisma.book.update({
-      where: { id: req.params.id },
+      where: { id },
       data: {
         ...data,
         coverUrl: data.coverUrl === "" ? null : data.coverUrl ?? undefined,
@@ -191,13 +194,14 @@ router.patch("/:id", authenticate, requireRole("LIBRARIAN", "ADMIN"), async (req
 
 router.delete("/:id", authenticate, requireRole("LIBRARIAN", "ADMIN"), async (req, res, next) => {
   try {
+    const id = param(req, "id");
     const activeBorrows = await prisma.borrow.count({
-      where: { bookId: req.params.id, status: { in: ["ACTIVE", "OVERDUE"] } },
+      where: { bookId: id, status: { in: ["ACTIVE", "OVERDUE"] } },
     });
     if (activeBorrows > 0) {
       throw new AppError(400, "Cannot delete book with active borrows");
     }
-    await prisma.book.delete({ where: { id: req.params.id } });
+    await prisma.book.delete({ where: { id } });
     res.json({ success: true });
   } catch (e) {
     next(e);

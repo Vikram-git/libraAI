@@ -99,7 +99,7 @@ export function ManageBooks() {
     setModal("create");
   }
 
-  function openEdit(book: Book & { category?: { id: string } }) {
+  function openEdit(book: Book) {
     setEditId(book.id);
     setForm({
       title: book.title,
@@ -109,7 +109,7 @@ export function ManageBooks() {
       coverUrl: book.coverUrl ?? getBookCoverUrl(book) ?? "",
       publishedYear: "",
       totalCopies: String(book.totalCopies),
-      categoryId: book.category?.id ?? "",
+      categoryId: "",
     });
     setModal("edit");
   }

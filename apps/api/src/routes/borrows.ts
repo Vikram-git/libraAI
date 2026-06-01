@@ -4,6 +4,7 @@ import { prisma } from "../lib/prisma.js";
 import { AppError } from "../lib/errors.js";
 import { authenticate, requireRole, type AuthRequest } from "../lib/auth.js";
 import { createNotification } from "../services/notifications.js";
+import { param } from "../lib/params.js";
 
 const router = Router();
 const BORROW_DAYS = 14;
@@ -96,14 +97,16 @@ router.post("/issue", requireRole("LIBRARIAN", "ADMIN"), async (req, res, next) 
 
 router.post("/:id/return", requireRole("LIBRARIAN", "ADMIN"), async (req, res, next) => {
   try {
+    const borrowId = param(req, "id");
     const borrow = await prisma.borrow.findUnique({
-      where: { id: req.params.id },
+      where: { id: borrowId },
       include: { book: true },
     });
     if (!borrow || borrow.status === "RETURNED") {
       throw new AppError(400, "Invalid borrow record");
     }
 
+    const bookTitle = borrow.book.title;
     const returnedAt = new Date();
     let fineAmount = 0;
     if (returnedAt > borrow.dueDate) {
@@ -131,7 +134,7 @@ router.post("/:id/return", requireRole("LIBRARIAN", "ADMIN"), async (req, res, n
           borrow.userId,
           "FINE",
           "Fine applied",
-          `A fine of ₹${fineAmount} was applied for late return of "${borrow.book.title}".`,
+          `A fine of ₹${fineAmount} was applied for late return of "${bookTitle}".`,
         );
       }
       return updated;
