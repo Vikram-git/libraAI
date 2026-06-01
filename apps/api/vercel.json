@@ -2,5 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install --prefix=../..",
   "buildCommand": "npx prisma generate && npm run build",
-  "framework": "express"
+  "framework": "express",
+  "outputDirectory": "dist"
 }
